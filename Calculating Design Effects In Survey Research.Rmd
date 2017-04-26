@@ -1,0 +1,29 @@
+---
+title: "Calculating the A Survey's Design Effect Due to Unequal Selection Probabilities"
+author: "James Wyatt"
+date: "4/26/2017"
+output: pdf_document
+---
+
+
+## The Design Effect
+
+Can be defined: 
+
+$$ DEFF = \frac{\sum_{i=1}^{n} w_i^2}{(\sum_{i=1}^{n}w_i)^2*n} $$
+After weighting for complex sampling, you sum the squared weights and dived it by the sum of the weights squared and multiply by the sample size. 
+
+After calculating the MOE: 
+
+$$MoE = z * \sqrt{ \frac{ p(1-p)}{n} }$$
+
+or using an approximation: 
+
+$$MoE = \frac{.98}{\sqrt{n}}$$
+
+you can update your level of precision of survey findings by incorporating the _DEFF_ & _MoE_ by taking the square root of the _DEFF_ (otherwise known as the _DEFFT_) and multiplying it with the _Mo_
+
+The confidence interval can then be expressed: 
+
+$$\sqrt(DEFF) * MoE$$
+
