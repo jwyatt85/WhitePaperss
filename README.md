@@ -5,5 +5,5 @@
 3. Bayes' theorem explained using national security example (stemming from unclassified CIA documents using Bayesian analysis found here:  [Systematic Strategic Warning](https://www.cia.gov/library/center-for-the-study-of-intelligence/kent-csi/vol16no2/html/v16i2a03p_0001.htm))
 4. Favorability MRP methdology.  [Link to the Study](https://morningconsult.com/trump-clinton-unpopular/).....[Link to methods section](https://morningconsult.com/wp-content/uploads/2016/06/MRP_Favorability_Methodology.pdf)
 5.  How to conduct Multilevel Regression and Marginal Poststratification using R
-6.  Calculating Design Effects in Survey Research
+6.  A simple calculation of a survey's design effect
 
