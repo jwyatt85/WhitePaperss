@@ -1,5 +1,5 @@
 ---
-title: "Calculating the A Survey's Design Effect Due to Unequal Selection Probabilities"
+title: "Calculating A Survey's Design Effect Due To Unequal Selection Probabilities"
 author: "James Wyatt"
 date: "4/26/2017"
 output: pdf_document
