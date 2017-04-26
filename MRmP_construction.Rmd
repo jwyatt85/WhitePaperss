@@ -1,0 +1,262 @@
+---
+title: "How to conduct Multilevel Regression and Marginal Poststratification using R"
+author: "James Wyatt"
+date: "July 2016"
+output: html_document
+---
+### Introduction
+
+In this paper I'll provide a step-by-step guide of how to implement multilevel regression and marginal poststratification (_MRmP_) using R to develop subnational estimates from national survey data.[^1]
+
+If you're new to MRP and it's associated methods or just need a refresher [click here](http://www.princeton.edu/~jkastell/mrp_primer.html)
+
+I'll use Lucas Leemann's & Fabio Wasserfallen's methodology of _MRmP_ found in:   [Extending the Use and Prediction Precision of Subnational Public Opinion Estimation, 2014](http://www.ucl.ac.uk/~uctqltl/myUCL/Research_files/MrP_methods_8.pdf)). 
+
+_MRmP_ extends and builds upon traditional MRP, which has stringent data requirments, by allowing researchers to include variables where only the true marginal distribution are known (unnested stratas).
+
+In traditional MRP, nested proportions are needed to conduct the analysis, typically found by utilizing national Census data.  Traditional MRP has limitations on the number of variables one can poststratify on and limits analysis to countries/geographic boundaries where such Census data is  available. 
+
+In contrast, using _MRmP_ the nested stratas are calculated from each variable's respective marginal distribution. Using MRmP one can extend the number of variables in a predictive model to include those not found in a Census (unlike traditional MRP), for example, such as party/ideology.  As a result of being able to include more variables that do not require Census nested stratas, one is able to build more accurate models and develop better predictive estimates compared to MRP. 
+
+The the following sections I describe how to implement _MRmP_ and the specific data requirements, while injecting R code where necessary.  
+
+\newpage
+
+### Steps for Implementing _MRmP_
+
+
+#### 1) Gather population proprotions
+The first step is getting an accurate representation of the types of individauls within each of sub-national unit of interest.  In our case, we're looking to get the marginal distributions of individuals by gender, age, race, education, etc in each state.  We don't need to have the joint probability distributions, or nested stratas, copmared to the MRP requirement.  In our case we just need to know the population proportions for each demographic group, such as the proportion of males and females in each state.  We can expand this out to any other demographic group of interest, such as the percent of Republicans and Democrats, or the percent of individuals who are Christian and non-Christian. 
+
+I've  [attached an example dataframe](https://github.com/jwyatt85/Blogging_Topics/blob/master/data/state_margins.csv) that includes each state's population parameters for the different demographic groups we're going to include in the _MRmP_ model.  The dataframe includes percentages for age, gender, educational attainment and race for each state gathered from the CPS.  Percent Christian/non-Christian for each state was gathered from PEW.  And the population proportions for political party affiliation were attained through each state's registration documents for the year 2014.  States with no official party registration were modeled or attained through exit polling.
+
+These individual level demographic variables will serve as our poststratfied dataset.
+
+The dataset is not meant for official use and merely serves as an example dataframe for our _MRmP_ example.  You would replace this dataframe with one of your choosing to conduct _MRmP_.  You can download the example data frame here: ([click here get the data - download the .csv file](https://github.com/jwyatt85/Blogging_Topics/blob/master/data/state_margins.csv)).
+
+#### 2) Gather state-level predictors
+Since we're going to running a multilevel regression model, we can include covariates that do not have varying intercepts.  These _grouping variables_ will be the state-level predictors and are not available in the census.  Some examples would be Presidential approval ratings by state, previous election returns by state, or state unemployment rates.  Again, these are not individual-level variables, but apply to the geographic unit themselves.  
+The grouping variables reduce standard errors, and in case where you don't have many respondents, such as in the smaller states, they will allow you to pool estimates to provide better estimates.
+
+If you didn't include state-level grouping variables you may have instances of "non-pooling".  For example, let's say you're looking to understand the support for abortion in each state.  You conducted a national poll and it so happens that you only interviewed 5 people in Oregon and 5 in Idaho.  Four in 5 respondents said they supported abortion in each state.  You then run MRP without grouping vars, and potentially over fit the data, and the model estimates an implausibly high support for abortion in Idaho, which you know doesn't pass the smell test.  
+
+You know that Idaho is one of the more conservative states in the Union, coupled with the states' demographic makeup and state-policies that limit or reduce access to abortions, you don't expect support for abortion to be so high (but you never know - you would just have a tougher time defending the results).  However, if you included grouping variables, such as the amount of anti-abortion laws in each state, 2012 presidential electoral returns, or the ideological leaning of each state, then you would find that even if 4 out of 5 respondents say they support abortion, the multi-level model would not estimate Oregon and Idaho to be approximately the same in terms of support.  Each state's estimates will pool towards their grouping variable means.  As a result, estimates will likely be lower for Idaho and than Oregon.  And _this_ is the value of utilizing a multilevel model and running MRP to develop state-level estimates from national polls.  It combines individual level data with empirical state-level data that we know influences responses to policies. 
+
+\newpage
+
+#### 3) Conduct a national poll (or gather a series of them) 
+In the polls you conduct or gather, each respondent's geographic information must be included.  In our case, it's each respondents state of residence.  If you were conducting _MRmP_ at other geographic levels such as Congressional district or the State Senate level, these must also be known for each respondent.
+
+Typically a national poll that has anywhere between 1,000 - 2,000 respondents (N size) is sufficient and provides enough statistical power when estimating state-level information.  For congressional districts, I've typically aggregated anywhere from 5,000 - 10,000 respondents in a diversified national poll.
+
+In the national survey you conduct, you're also going to have the main outcome variable you're looking to get estimate for.  In our case we're looking to estimate presidential approval ratings, so the national survey includes the question:  _Do you approve or disapprove of the job that Barack Obama is doing as president?_ The answer options are 1) _Yes_ and 2) _No_. 
+
+<!-- going to attach a poll here, just need to clean it up -->
+
+#### 4) Data Manipulation: Develop post-stratified set
+
+We first begin by taking the data set that includes the population proportions and developing a nested list of each state's demographic proportions that we want to develop poststratified estimates for.  To do this we'll develop a function that takes, as parameters, the list of states you want to develop nested stratas for (you pass it 'ALL' if you want to get poststratified lists of all states), and the list of variables that will become our poststratified list (age, gender, race, etc.). 
+
+```{r margins_function, eval=TRUE, tidy=TRUE, message=FALSE, warning=FALSE}
+library(dplyr)
+library(readr)
+
+get_margins <- function(states, vars){
+  if('ALL' %in% states){
+    states <- as.character(c(state.abb[1:8], 'DC', state.abb[9:50]))
+  }
+  output <- lapply(
+    states, 
+    function(i){
+      df <- readr::read_csv("~/Desktop/state_margins.csv")
+      
+      df <- df %>% 
+      dplyr::filter(
+        stname == i
+      )
+      margins <- list()
+      
+      if('sex' %in% vars){
+        sex_margins <- list(data.frame(sex = c('Male', 'Female'), Freq = c(df$Male, df$Female)))
+        margins <- c(margins, sex_margins)
+        names(margins) <- c(names(margins), "sex")
+      }
+      if('age' %in% vars){
+        age_margins <- list(data.frame(age = c('18-29', '30-44', '45-64', '65+'), Freq = c(df$`18-29`, df$`30-44`, df$`45-64`, df$`65+`)))
+        margins <- c(margins, age_margins)
+        names(margins) <- c(names(margins)[names(margins) > 1], "age")
+      }
+      if('education' %in% vars){
+        education_margins <- list(data.frame(education = c('LTC', 'Bachelors', 'Post-grad'), Freq = c(df$LTC, df$Bachelors, df$`Post-grad`)))
+        margins <- c(margins, education_margins)
+        names(margins) <- c(names(margins)[names(margins) > 1], "education")
+      }
+      if('race' %in% vars){
+        race_margins <- list(data.frame(race = c('Black', 'Other', 'White'), Freq = c(df$Black, df$Other, df$White)))
+        margins <- c(margins, race_margins)
+        names(margins) <- c(names(margins)[names(margins) > 1], "race")
+      }
+      if('party' %in% vars){
+        party_margins <- list(data.frame(party = c('Republican', 'Democrat', 'Independent', 'Something else'), Freq = c(df$Republican, df$Democrat, df$Independent, df$`Something else`)))
+        margins <- c(margins, party_margins)
+        names(margins) <- c(names(margins)[names(margins) > 1], "party")
+      }
+      if('religion' %in% vars){
+        religion_margins <- list(data.frame(religion = c('Christian', 'Non_Christian'), Freq = c(df$percent_christian, df$percent_non_christian)))
+        margins <- c(margins, religion_margins)
+        names(margins) <- c(names(margins)[names(margins) > 1], "religion")
+      } 
+      
+      margins
+    }
+  )
+  names(output) <- states
+  output
+}
+```
+
+
+Lets say we want the population proportions for all states, and are interested in poststratifying by age, political party, and gender.  To get the list of dataframes in order to develop the poststratified list, we can run the following function. 
+
+```{r run_margins, eval=TRUE, tidy=TRUE, message=FALSE, warning=FALSE, comment=NA}
+my_margins_list <- get_margins(states = "ALL", vars   = c("age", "party", "sex"))
+
+my_margins_list[1]
+```
+
+Taking the first element of `my_margins_list[1]` (Alabama) we get the population parameters of interest. 
+
+The next step is to take `my_margins_list` and create the post stratified set.  We create a new function, `get_joint_probs`, which will loop through each dataframe, take the marginal probability distributions, and create the joint probability distributions for each.
+
+```{r post_strat_function, eval=TRUE, tidy=TRUE, message=FALSE, warning=FALSE}
+get_joint_probs <- function(data){
+  x <- data
+  #### Create marginal grids by state ------------------------------------------------------------------------------------
+  final_grids <- lapply(1:length(x), function(i){
+    state_strats <- lapply(
+      1:length(x[[i]]), function(j){
+        levels(x[[i]][[j]][,1])
+      }
+    )
+    names(state_strats) <- names(x[[i]])
+    expand.grid(state_strats)
+  })
+  
+  
+  names(final_grids) <- names(x)
+  
+  #### Mutate marginal grids by state ------------------------------------------------------------------------------------
+  for(i in 1:length(final_grids)){
+    final_grids[[i]] <- final_grids[[i]] %>% 
+      dplyr::mutate(
+        id = seq(1, nrow(.)),
+        wts = rep(1, nrow(.)),
+        stname = names(final_grids)[i]
+      ) 
+  }
+  
+  #### Make Survey Designs ------------------------------------------------------------------------------------
+  survey_designs <- lapply(
+    1:length(final_grids), function(i){
+      df <- final_grids[[i]]
+      census_dsg <- survey::svydesign(id = ~id, weights = ~wts, data = df)
+    }
+  )
+  
+  #### Ceate Joint Probabilities ------------------------------------------------------------------------------------
+  
+final_state_tables <- lapply(
+    1:length(x), function(i){
+      census_dsg <- survey_designs[[i]]
+      # print(paste0("state: ", i))
+      iter <- 1
+      epsilon <- 1
+      sample_margins <- vector('list', length(names(x[[i]])))
+      for(z in 1:length(sample_margins)) { 
+        sample_margins[[z]] <- as.formula(paste0("~",names(x[[i]])[z]))
+      }
+      nmar <- length(sample_margins)
+      population_margins <- x[[i]]
+      design <- census_dsg
+      
+      ff <- formula(
+        paste(
+          "~", 
+          paste(
+            unlist(lapply(sample_margins, all.vars)),
+            collapse = "+"), 
+          sep = ""
+        )
+      )
+      
+      strata <- lapply(
+        sample_margins,
+        function(margin) {
+          if (inherits(margin, "formula")) {
+            mf <- model.frame(margin, data = design$variables, na.action = na.fail)
+          }
+        }
+      )
+      oldtable <- survey::svytable(ff, design)
+      
+      while (iter < 100) {
+        design$postStrata <- NULL
+        for (i in 1:nmar) {
+          design <- survey::postStratify(
+            design,
+            strata[[i]],
+            population_margins[[i]], 
+            compress = FALSE
+          )
+        }
+        newtable <- survey::svytable(ff, design)
+        delta <- max(abs(oldtable - newtable))
+        if (delta < epsilon) {
+          converged <- TRUE
+          break
+        }
+        
+        cat('Running iteration: ', iter, '\n')
+        oldtable <- newtable
+        iter <- iter + 1
+      }
+      
+      newtable <- as.data.frame(newtable)
+      newtable <- newtable %>% 
+        mutate(
+          id = 1:nrow(newtable)
+        )
+
+    })
+  
+names(final_state_tables) <- names(x)
+final_state_tables
+}
+
+```
+
+Passing our `my_margins_list` to the `get_joint_probs` and taking the first element (Alabama), we get the probability distributions, or population proportions, for each demographic group within the state.  This is our poststratified dataframe in which we will fit a multi-level logistic regression model, to get state-level estimates.  
+```{r post_final, eval=TRUE, tidy=FALSE, message=FALSE, warning=FALSE, comment=NA, }
+
+# joints <- get_joint_probs(
+#             get_margins(
+#               states = "ALL", 
+#               vars   = c("age", "party", "sex")
+#             )
+#           )
+
+joints <- get_joint_probs(my_margins_list)
+
+joints[1]
+
+```
+
+
+
+[^1]: (Gelman and Hill, 2006; @Gelman, 2009; Ghitza and Gelman, 2013; Howe et al., 2015; Kastellec,
+Lax, and Phillips, 2010; Lax and Phillips, 2009; Leemann and Wasserfallen, 2014,?;
+Park, Gelman, and Bafumi, 2004; Warshaw and Rodden, 2012). MRP has been widely
+used in industry and in academia, and MRP estimates of state and Congressional
+District level public opinion have generally been shown to outperform national polling,
+especially when there are few respondents in smaller geographic areas (Warshaw and
+Rodden, 2012).

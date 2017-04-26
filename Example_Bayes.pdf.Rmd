@@ -1,0 +1,94 @@
+---
+title: "Bayes' Theorem Explained Using a National Security Example"
+author: "James Wyatt"
+date: "June 19, 2016"
+output: pdf_document
+---
+
+### Applied Bayesian 
+Bayesian inference is a statistical technique that uses Bayes' theorem to update the probability of any one event occurring based on evidence and prior information. One realm of application where this is useful is in developing strategic warnings about national security events such as terrorist attacks or the breakout of war.  
+
+Unclassified documents by the CIA show how Bayesian analysis was used and where it's most applicable.[^1]  The CIA used multiple methods, for example, to predict the probability of various events such as a Soviet War with China in the late 1960s.
+
+In this quick and simple example, we'll take a case-study from the CIA document and use Bayes' formula to develop estimates on the probability of attack on Pearl Harbor.
+
+[^1]: https://www.cia.gov/library/center-for-the-study-of-intelligence/kent-csi/vol16no2/html/v16i2a03p_0001.htm.  
+
+
+
+
+
+### Notation
+
+* Prior Probability: the likelihood $x$ occurs
+* Update your information based on event $y$: Probability of $y$ occurring conditional on $x$ occurring
+* Probability of $y$ occurring if $x$ does not occur = $z$
+* Posterior probability: Estimated likelihood that $x$ is occurring given $y$ and $z$ is: 
+
+$$ \frac{xy}{xy + z(1-x)} $$
+
+Precisely: 
+
+$$P(A\lvert{B}) = \frac{P(B\lvert{A})P(A)}{P(B)}$$
+
+
+### Pearl Harbor Example
+
+In July, 1937, Japan invaded North China  through Manchuria looking to dominate Asia and the Pacific territories.  World War II hadn't officially started yet (according to historians), which is said to have begun September 1st, 1939.  The United States at this point was not involved directly with the war, but decided to curb Japan's military aggression in the region by imposing an embargo and trade sanctions in July 1940. 
+
+From here on out we'll utilize Bayesian probability analysis to develop estimates and update the likelihood of an attack on Pearl Harbor based on the timeline of information that occurred before December 7th, 1941.  Just want to point out that this is an example of how one can apply Bayesian inference to a problem of national security and strategic warning in the most simplest of cases.  
+
+\textbf{\textit{The main goal is to utilize this example to explain Bayesian inference}}
+
+\newpage
+
+Timeline of the attack and other information was sourced from NPR. [^2]
+
+[^2]: NPR: http://www.npr.org/templates/story/story.php?storyId=4206060
+
+### Updated evidence of attack
+
+#### Development 1: January 27, 1941
+
+Joseph C. Grew, the U.S. ambassador to Japan, wires information to officials in Washington that he has learned that Japan is planning a surprise attack on Pearl Harbor. No one in Washington believes the information. Most senior American military experts believe the Japanese would attack Manila in the Philippine Islands if war broke out.
+
+The probability of attack therefore was quite low.  Let's approximate it to be around $x = 1\%$.  The probability that the US ambassador wires the information conditional of an attack on Pearl Harbor $y =30\%$, and the probability of the wired information occurring if an attack is _not_ likely $z = 3\%$.
+
+Using our Bayes' formula, the revised estimate that an attack on Pearly Harbor occurring is: 
+
+$$\frac{(.01)(.30)}{(.01)(.30)+.03(1-.01)} = 9.2\%$$
+
+Officials at the Pentagon thought it was foolish to believe that an attack against the United States would occur, but as we see, using Bayesian analysis, it's not absolute zero.  There was about a one in 10 chance of it occurring given the parameters that we passed to the formula.  The reason the threat of an attack is low (9\%), even after diplomats in Japan said they learned of an attack, is becaucse of the low probability we assigned an attack from Japan in the first place. 
+
+#### Development 2: September 24th, 1941
+
+By this time, the United States was able to decrypt Japan's internal messages, and intelligence officers were able to monitor Japan's preparation for attack despite Japan potentially knowing the Americans have broken the code. 
+
+On September 24th, 1941, The "bomb plot" message from Japanese naval intelligence to Japan's consult general in Honolulu was decoded.  In the message, Japan's intelligence requested a grid of exact locations of ships in Pearl Harbor. The information is not shared with  Hawaii's Adm. Kimmel and Gen. Short.
+
+The probability of attack was updated to $x = 9\%$ as per the first message sent by US diplomats back in January. The probability that Japan's intelligence agency would request locations of ships in Pearl Harbor conditional on an attack on Pearl Harbor? Let's say that's $y =70\%$.  And the probability of the wired message occurring if an attack is _not_ likely $z = 5\%$
+
+Probability of attack, revised: 
+
+$$\frac{(.09)(.70)}{(.09)(.70)+.05(1-.09)} = 58\%$$
+
+\newpage
+
+### Last Development: Night of Dec. 6, Morning of Dec. 7
+
+U.S. intelligence decodes a message pointing to Sunday morning as a deadline for some kind of Japanese action.
+
+The probability of attack (updated) $x = 58\%$. The probability that Japan's intelligence agency sets a deadline on some kind of action against the United States conditional of an attack on Pearl Harbor $y =60\%$ And the probability of the message denoting a deadline for action if an attack is _not_ likely$z = 1\%$
+
+$$\frac{(.58)(.60)}{(.58)(.60)+.01(1-.60)} = 98\%$$
+
+### Conclusion
+
+As we see, because of new information and evidence, the threat of a Japanese attack had increased from 1% to approximately 98\% in the days right before the attack.  Two months before the attack we concluded a 58\% probability.  At that point, if decisions were to be made as a result of Bayesian inference, measures should have been taken to secure strategic points of interest and the US should have increased scouting of potential attacks from the Japanese.  None of that occurred, as hindsight is always 20/20.  We calculated the odds favoring one hypothesis (say imminent attack) over another hypothesis (no imminent attack).  
+
+One of the main drawbacks of this method, however, is deciding how much relative likelihood or probability we assign each parameter ($x,y,z$ in the formula) that is not based on a posteriori information.  We essentially _chose_ those numbers.  If an analysts had chosen different probabilities for each of these parameters, or thought the information provided from de-coded messages were junk, then the outcome probability would be different.  
+
+
+
+
+
