@@ -27,9 +27,9 @@ or using an approximation:
 
 $$MoE = \frac{.98}{\sqrt{n}}$$
 
-you update your level of precision of survey findings by incorporating the _DEFF_ & _MoE_ by taking the square root of the _DEFF_ (otherwise known as the _DEFFT_) and multiplying it with the _MoE_
+you update your level of precision (pretty much updating your MoE) by incorporating the _DEFF_ & _MoE_ by taking the square root of the _DEFF_ (otherwise known as the _DEFFT_) and multiplying it with the _MoE_
 
-The confidence interval (or margin of error) can then be expressed: 
+The confidence interval (or margin of error) can be expressed as: 
 
 $$\sqrt(DEFF) * MoE$$
 
