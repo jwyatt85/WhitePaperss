@@ -15,7 +15,7 @@ $$ DEFF = \frac{\sum_{i=1}^{n} w_i^2}{(\sum_{i=1}^{n}w_i)^2*n} $$
 where $w_i$ is the post-stratification weight for any one individual in the survey and _n_ is the sample size of the unweighted sample.  
 
 
-After weighting for complex sampling, you sum the squared weights and dived it by the sum of the weights squared multiplied s by the sample size. 
+After weighting for complex sampling, you sum the squared weights and dived it by the sum of the weights squared multiplied by the sample size. 
 
 ## Update Confidence Interval to Include Design Effect
 
